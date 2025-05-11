@@ -4,6 +4,7 @@ enum class LineStatus {
     Normal,
     Warning,
     Error,
+    NonFatalFailure,
     ;
 
     companion object {

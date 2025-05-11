@@ -80,6 +80,7 @@ class UnityLoggingListener(
         val serviceMessage = when (status) {
             LineStatus.Warning -> Message(message, Status.WARNING.text, null).asString()
             LineStatus.Error -> BuildProblem(message).asString()
+            LineStatus.NonFatalFailure -> Message(message, Status.FAILURE.text, null).asString()
             else -> message
         }
         logger.message(serviceMessage)

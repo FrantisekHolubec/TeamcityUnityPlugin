@@ -16,7 +16,7 @@ class LineStatusProvider {
             listOf(
                 Regex(".*?warning CS\\d+.*?") to LineStatus.Warning,
                 Regex("WARNING.*") to LineStatus.Warning,
-                Regex(".*?error CS\\d+.*?") to LineStatus.Error,
+                Regex(".*?error CS\\d+.*?") to LineStatus.NonFatalFailure,
                 Regex("Compilation failed:.*") to LineStatus.Error,
                 Regex("Scripts have compiler errors\\..*") to LineStatus.Error,
                 Regex("Error building player because script class layout is incompatible between the editor and the player.") to LineStatus.Error,
