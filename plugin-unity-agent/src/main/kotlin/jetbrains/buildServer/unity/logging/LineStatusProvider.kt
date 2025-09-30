@@ -15,7 +15,7 @@ class LineStatusProvider {
         patterns.addAll(
             listOf(
                 Regex(".*?warning CS\\d+.*?") to LineStatus.Warning,
-                Regex("WARNING.*") to LineStatus.Warning,
+                Regex("WARNING(?!_LOGS).*") to LineStatus.Warning,
                 Regex(".*?error CS\\d+.*?") to LineStatus.NonFatalFailure,
                 Regex("Compilation failed:.*") to LineStatus.Error,
                 Regex("Scripts have compiler errors\\..*") to LineStatus.Error,
@@ -26,8 +26,19 @@ class LineStatusProvider {
                 Regex("Couldn't set project path to:.+") to LineStatus.Error,
                 Regex("Failed to activate/update license") to LineStatus.Error,
                 Regex("Error building player .+") to LineStatus.Error,
-            ),
-        )
+                Regex("FAILURE: Build failed with an exception.*") to LineStatus.Error,
+                Regex("\\*\\* ARCHIVE FAILED \\*\\*.*") to LineStatus.Error,
+                Regex("Undefined symbols for architecture.*") to LineStatus.Error,
+                Regex("Addressable content build failure.*") to LineStatus.Error,
+                Regex("Failed to build Addressables content.*") to LineStatus.Error,
+                Regex(".*?Unexpected exception in.*?") to LineStatus.NonFatalFailure,
+                Regex("Assertion failed on expression:.*?") to LineStatus.Warning,
+                Regex(".*?is self-intersecting and has been discarded.*?") to LineStatus.Warning,
+                Regex(".*?mesh .+ has invalid normals.*?") to LineStatus.Warning,
+                Regex("Identifier uniqueness violation:.*") to LineStatus.Warning,
+                Regex("Missing types referenced from.*?") to LineStatus.NonFatalFailure,
+                Regex("OVRPlugin not updated. Restart the editor to update.*") to LineStatus.NonFatalFailure,
+        ))
     }
 
     constructor(lineStatusesFile: File) {
