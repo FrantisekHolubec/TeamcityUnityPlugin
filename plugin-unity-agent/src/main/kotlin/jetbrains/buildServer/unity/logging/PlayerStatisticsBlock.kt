@@ -6,9 +6,9 @@ class PlayerStatisticsBlock : LogBlock {
 
     override val name = "Player statistics"
 
-    override val logFirstLine = LogType.Outside
+    override val logFirstLine = LogType.None
 
-    override val logLastLine = LogType.Outside
+    override val logLastLine = LogType.Inside
 
     override fun isBlockStart(text: String) = blockStart.containsMatchIn(text)
 
@@ -18,6 +18,6 @@ class PlayerStatisticsBlock : LogBlock {
 
     companion object {
         private val blockStart = Regex("\\*\\*\\*Player size statistics\\*\\*\\*")
-        private val blockEnd = Regex("Unloading.*")
+        private val blockEnd = Regex("Total compressed size.*")
     }
 }
