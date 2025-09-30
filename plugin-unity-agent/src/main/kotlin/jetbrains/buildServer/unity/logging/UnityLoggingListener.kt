@@ -118,9 +118,26 @@ class UnityLoggingListener(
             PerformanceBlock(),
             PlayerStatisticsBlock(),
             PrepareBlock(),
-            RefreshBlock(),
             ScriptCompilationBlock(),
             UpdateBlock(),
+            AssetDatabaseInitialRefreshBlock(),
+            AssetDatabaseRefreshBlock(),
+            MonoManagerReloadAssemblyBlock(),
+            UnityStackTraceBlock(),
+            DomainReloadProfilingBlock(),
+            RefreshInfoBlock(),
+            UnityCoroutineStackTraceBlock(),
+            ManifestCurrentFilesBlock(),
+            ManifestParsingBlock(),
+            MonoDependenciesBlock(),
+            CompilingShaderBlock(),
+            IL2CppProgressBlock(),
+            CompilationInfoBlock(),
+            AssetImportingBlock(),
+            MemoryStatisticsBlock(),
+            GoogleStackTraceBlock(),
+            InfoProcessorBlock(),
+            UnityMemoryParamsBlock()
         )
     }
 }
