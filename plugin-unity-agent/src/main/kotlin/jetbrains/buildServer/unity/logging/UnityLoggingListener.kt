@@ -13,7 +13,7 @@ import java.util.*
 
 class UnityLoggingListener(
     private val logger: BuildProgressLogger,
-    private val problemsProvider: LineStatusProvider,
+    private val problemsProvider: LineStatusProvider
 ) : ProcessListenerAdapter() {
 
     private var blocks = Stack<LogBlock>()
@@ -21,36 +21,20 @@ class UnityLoggingListener(
         get() = if (blocks.isEmpty()) defaultBlock else blocks.peek()
 
     override fun onStandardOutput(text: String) {
-        currentBlock.apply {
-            if (isBlockEnd(text)) {
-                when (logLastLine) {
-                    LogType.Outside -> {
-                        logBlockClosed(name)
-                        blocks.pop()
-                        logMessage(text)
-                    }
-                    LogType.Inside -> {
-                        logMessage(text)
-                        logBlockClosed(name)
-                        blocks.pop()
-                    }
-                    else -> {
-                        logBlockClosed(name)
-                        blocks.pop()
-                    }
-                }
-                return
-            }
+        var blockClosed = false
+        var lastLineLogType = currentBlock.logLastLine
+        var previousBlockLastLineLogType = currentBlock.logLastLine
+        while (tryCloseCurrentBlock(text)) {
+            if (blockClosed)
+                lastLineLogType = previousBlockLastLineLogType
+            blockClosed = true
+            previousBlockLastLineLogType = currentBlock.logLastLine
         }
 
         val foundBlock = loggers.firstOrNull {
             it.isBlockStart(text)
         }
         if (foundBlock != null && foundBlock != currentBlock) {
-            if (currentBlock != defaultBlock) {
-                logBlockClosed(currentBlock.name)
-                blocks.pop()
-            }
             foundBlock.apply {
                 when (logFirstLine) {
                     LogType.Outside -> {
@@ -70,8 +54,35 @@ class UnityLoggingListener(
                 }
             }
         } else {
-            logMessage(text)
+            if (!blockClosed || lastLineLogType == LogType.Outside) logMessage(text)
         }
+    }
+
+
+    private fun tryCloseCurrentBlock(text: String): Boolean {
+        currentBlock.apply {
+            if (isBlockEnd(text)) {
+                when (logLastLine) {
+                    LogType.Outside -> {
+                        logBlockClosed(name)
+                        blocks.pop()
+                    }
+
+                    LogType.Inside -> {
+                        logMessage(text)
+                        logBlockClosed(name)
+                        blocks.pop()
+                    }
+
+                    else -> {
+                        logBlockClosed(name)
+                        blocks.pop()
+                    }
+                }
+                return true
+            }
+        }
+        return false
     }
 
     private fun logMessage(text: String) {
