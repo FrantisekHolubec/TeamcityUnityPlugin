@@ -39,7 +39,7 @@ class LineStatusProvider {
                 Regex("Missing types referenced from.*?") to LineStatus.NonFatalFailure,
                 Regex("OVRPlugin not updated. Restart the editor to update.*") to LineStatus.NonFatalFailure,
                 Regex("A meta data file \\(\\.meta\\) exists but its folder .* can't be found.*") to LineStatus.Warning,
-
+                Regex("Unity is running with Administrator privileges.*") to LineStatus.Warning,
         ))
     }
 
