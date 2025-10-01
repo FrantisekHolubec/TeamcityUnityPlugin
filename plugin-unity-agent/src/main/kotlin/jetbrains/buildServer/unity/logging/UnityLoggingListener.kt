@@ -137,7 +137,8 @@ class UnityLoggingListener(
             MemoryStatisticsBlock(),
             GoogleStackTraceBlock(),
             InfoProcessorBlock(),
-            UnityMemoryParamsBlock()
+            UnityMemoryParamsBlock(),
+            FailedMenuItemInsertionBlock()
         )
     }
 }

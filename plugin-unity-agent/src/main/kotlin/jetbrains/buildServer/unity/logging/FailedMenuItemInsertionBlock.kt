@@ -1,7 +1,7 @@
 package jetbrains.buildServer.unity.logging
 
-class IL2CppProgressBlock : LogBlock {
-    override val name = "IL2Cpp progress logs ..."
+class FailedMenuItemInsertionBlock : LogBlock {
+    override val name = "Failed menu item insertion"
     override val logFirstLine = LogType.Inside
     override val logLastLine = LogType.Outside
 
@@ -15,14 +15,12 @@ class IL2CppProgressBlock : LogBlock {
 
     companion object {
         private val startPatterns = listOf(
-            Regex("\\[\\s*((\\d+/\\d+)|\\w+)?\\s*\\d+s\\]")
+            Regex("^Failed to insert item.*")
         )
 
         private val endPatterns = listOf(
-            Regex("\\[\\s*((\\d+/\\d+)|\\w+)?\\s*\\d+s\\]"),
-            Regex("processors: .*"),
-            Regex("running.*"),
-            Regex("^\\s*$")
+            Regex("^Failed to.*"),
+            Regex("^Name:.*")
         )
     }
 }
