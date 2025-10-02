@@ -36,8 +36,8 @@ class LineStatusProvider {
                 Regex(".*?is self-intersecting and has been discarded.*?") to LineStatus.Warning,
                 Regex(".*?mesh .+ has invalid normals.*?") to LineStatus.Warning,
                 Regex("Identifier uniqueness violation:.*") to LineStatus.Warning,
-                Regex("Missing types referenced from.*?") to LineStatus.NonFatalFailure,
-                Regex("OVRPlugin not updated. Restart the editor to update.*") to LineStatus.NonFatalFailure,
+                Regex("Missing types referenced from.*?") to LineStatus.Warning,
+                Regex("OVRPlugin not updated. Restart the editor to update.*") to LineStatus.Warning,
                 Regex("A meta data file \\(\\.meta\\) exists but its folder .* can't be found.*") to LineStatus.Warning,
                 Regex("Unity is running with Administrator privileges.*") to LineStatus.Warning,
         ))
