@@ -20,7 +20,8 @@ class IL2CppProgressBlock : LogBlock {
 
         private val endPatterns = listOf(
             Regex("\\[\\s*((\\d+/\\d+)|\\w+)?\\s*\\d+s\\]"),
-            Regex("processors: .*"),
+            Regex("Processing assembly.*"),
+            Regex("processors:.*"),
             Regex("running.*"),
             Regex("^\\s*$")
         )
