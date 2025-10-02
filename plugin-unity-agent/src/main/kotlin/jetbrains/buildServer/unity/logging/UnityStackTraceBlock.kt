@@ -1,24 +1,23 @@
 package jetbrains.buildServer.unity.logging
 
-class UnityStackTraceBlock : LogBlock {
+import kotlin.text.Regex
 
+class UnityStackTraceBlock : LogBlock {
     override val name = "StackTrace..."
     override val logFirstLine = LogType.Inside
     override val logLastLine = LogType.Inside
 
     override fun isBlockStart(text: String) = blockStartPatterns.any { it.containsMatchIn(text) }
-
     override fun isBlockEnd(text: String) = blockEndPatterns.any { it.containsMatchIn(text) }
-
-    override fun getText(text: String) =
-        if (filterOut.any { it.containsMatchIn(text) }) ""
-        else text
+    override fun getText(text: String) = text
 
     companion object {
         private val blockStartPatterns = listOf(
             Regex("UnityEngine.*ExtractStackTrace"),
             Regex("UnityEngine\\.StackTraceUtility:ExtractStackTrace.*"),
-            Regex("UnityEditor\\.BuildPipeline:BuildPlayerInternalNoCheck.*$")
+            Regex("UnityEditor\\.BuildPipeline:BuildPlayerInternalNoCheck.*$"),
+            Regex(".*\\(Unity\\) StackWalker::GetCurrentCallstack.*"),
+            Regex(".*\\(Unity\\) StackWalker::ShowCallstack.*"),
         )
 
         private val blockEndPatterns = listOf(
@@ -28,13 +27,8 @@ class UnityStackTraceBlock : LogBlock {
             Regex("UnityEditor\\.Modules\\.ModuleManager:InitializePlatformSupportModules.*"),
             Regex("UnityEditor\\.EditorApplication:Internal_CallDelayFunctions.*"),
             Regex("UnityEditor\\.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes.*"),
-            Regex("UnityEditor\\.AssetPostprocessingInternal:PostprocessAllAssets.*")
-        )
-
-        private val filterOut = listOf(
-            Regex("^UnityEngine\\.Debug:.*$"),
-            Regex("^UnityEngine\\.Logger:.*$"),
-            Regex("^UnityEngine\\.StackTraceUtility:.*$")
+            Regex("UnityEditor\\.AssetPostprocessingInternal:PostprocessAllAssets.*"),
+            Regex(".*\\(ntdll\\) RtlUserThreadStart.*")
         )
     }
 }
