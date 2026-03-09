@@ -1,5 +1,3 @@
-
-
 package jetbrains.buildServer.unity.detectors
 
 import com.intellij.openapi.diagnostic.Logger
@@ -9,6 +7,7 @@ import jetbrains.buildServer.agent.AgentLifeCycleListener
 import jetbrains.buildServer.agent.AgentRunningBuild
 import jetbrains.buildServer.agent.BuildAgent
 import jetbrains.buildServer.agent.BuildAgentConfiguration
+import jetbrains.buildServer.agent.BuildProgressLogger
 import jetbrains.buildServer.agent.BuildRunnerContext
 import jetbrains.buildServer.agent.ToolCannotBeFoundException
 import jetbrains.buildServer.agent.ToolProvider
@@ -106,6 +105,7 @@ class UnityToolProvider(
     }
 
     fun getUnity(runnerContext: UnityBuildRunnerContext): UnityEnvironment {
+        val logger = runnerContext.build.buildLogger
         val detectionMode = getDetectionMode(
             runnerContext.runnerParameters[PARAM_DETECTION_MODE],
             runnerContext.unityRootParam(),
@@ -113,19 +113,20 @@ class UnityToolProvider(
 
         val environment = when (detectionMode) {
             DetectionMode.Auto -> {
-                discoverUnityByVersion(runnerContext)
+                discoverUnityByVersion(runnerContext, logger)
             }
             DetectionMode.Manual -> {
                 discoverUnityByPath(runnerContext)
             }
         }
 
-        LOG.info("Unity '${environment.unityVersion}' located at '${environment.unityPath}' was chosen based on build step settings")
+        logResolution(logger, "Unity '${environment.unityVersion}' located at '${environment.unityPath}' was chosen based on build step settings")
 
         return environment
     }
 
     fun getUnity(build: AgentRunningBuild): UnityEnvironment {
+        val logger = build.buildLogger
         val feature = build.getBuildFeaturesOfType(BUILD_FEATURE_TYPE).single()
         val detectionMode = getDetectionMode(
             feature.parameters[PARAM_DETECTION_MODE],
@@ -135,15 +136,19 @@ class UnityToolProvider(
         val environment = when (detectionMode) {
             DetectionMode.Auto -> {
                 tryParseVersion(feature.parameters[PARAM_UNITY_VERSION])?.let {
-                    getUnityByVersion(it)
-                } ?: unityVersions.getLatestEnvironment()
+                    logResolution(logger, "Unity version explicitly specified in build feature: $it")
+                    getUnityByVersion(it, logger)
+                } ?: run {
+                    logResolution(logger, "Unity version in build feature is empty. Falling back to latest available Unity on agent")
+                    unityVersions.getLatestEnvironment()
+                }
             }
             DetectionMode.Manual -> {
                 discoverUnityByPath(feature.parameters[PARAM_UNITY_ROOT])
             }
         }
 
-        LOG.info("Unity '${environment.unityVersion}' located at '${environment.unityPath}' was chosen based on build settings")
+        logResolution(logger, "Unity '${environment.unityVersion}' located at '${environment.unityPath}' was chosen based on build settings")
 
         return environment
     }
@@ -162,52 +167,68 @@ class UnityToolProvider(
         }
     }
 
-    private fun discoverUnityByVersion(runnerContext: UnityBuildRunnerContext): UnityEnvironment {
+    private fun discoverUnityByVersion(
+        runnerContext: UnityBuildRunnerContext,
+        logger: BuildProgressLogger,
+    ): UnityEnvironment {
         val unityVersion = runnerContext.unityVersionParam()
 
         if (unityVersion == null) {
-            LOG.info("Unity version has not been explicitly specified. Will try to implicitly select the proper one")
-            return implicitlySelectProperUnity(runnerContext)
+            logResolution(logger, "Unity version parameter is empty. Trying to resolve version from ProjectSettings/ProjectVersion.txt")
+            return implicitlySelectProperUnity(runnerContext, logger)
         }
 
-        return getUnityByVersion(unityVersion)
+        logResolution(logger, "Unity version parameter resolved to '$unityVersion'")
+        return getUnityByVersion(unityVersion, logger)
     }
 
-    private fun getUnityByVersion(version: UnityVersion): UnityEnvironment {
+    private fun getUnityByVersion(version: UnityVersion, logger: BuildProgressLogger? = null): UnityEnvironment {
         unityVersions[version]?.let { path ->
+            logResolution(logger, "Found exact Unity match for '$version' at '$path'")
             return createEnvironment(path, version)
         }
 
         val upperVersion = getUpperVersion(version)
-        LOG.info("Specified Unity '$version' version was not found. Will try to find the latest version up to '$upperVersion'")
+        logResolution(logger, "Exact Unity '$version' not found. Looking for latest compatible version in range ['$version', '$upperVersion')")
         unityVersions.entries
             .filter {
                 it.key >= version && it.key < upperVersion
             }
             .maxByOrNull { it.key }
-            ?.let { (version, path) ->
-                return createEnvironment(path, version)
+            ?.let { (matchedVersion, path) ->
+                logResolution(logger, "Found compatible Unity '$matchedVersion' for requested '$version' at '$path'")
+                return createEnvironment(path, matchedVersion)
             }
 
         throw ToolCannotBeFoundException(
             """
-            Unable to locate tool $RUNNER_TYPE $version in system. 
+            Unable to locate tool $RUNNER_TYPE $version in system.
             Please make sure to specify UNITY_PATH environment variable
             """.trimIndent(),
         )
     }
 
-    private fun implicitlySelectProperUnity(runnerContext: UnityBuildRunnerContext): UnityEnvironment {
+    private fun implicitlySelectProperUnity(
+        runnerContext: UnityBuildRunnerContext,
+        logger: BuildProgressLogger,
+    ): UnityEnvironment {
         tryToFindAssociatedUnityVersion(runnerContext)?.let { version ->
+            logResolution(logger, "ProjectSettings resolved Unity version '$version'")
             unityVersions[version]?.let { path ->
+                logResolution(logger, "Found exact Unity for ProjectSettings version '$version' at '$path'")
                 return createEnvironment(path, version)
             }
 
-            LOG.info("Agent has no Unity '$version' version installed")
-        }
+            logResolution(logger, "Agent has no exact Unity '$version' version installed")
+        } ?: logResolution(logger, "Could not detect Unity version from ProjectSettings (ProjectVersion.txt missing or unreadable)")
 
-        LOG.info("Will take the latest available Unity on the agent for the build")
+        logResolution(logger, "Falling back to latest available Unity on agent")
         return unityVersions.getLatestEnvironment()
+    }
+
+    private fun logResolution(logger: BuildProgressLogger?, message: String) {
+        LOG.info(message)
+        logger?.message(message)
     }
 
     private fun discoverUnityByPath(rootPath: String?): UnityEnvironment {

@@ -8,7 +8,9 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import jetbrains.buildServer.ExtensionHolder
 import jetbrains.buildServer.agent.AgentLifeCycleListener
+import jetbrains.buildServer.agent.AgentRunningBuild
 import jetbrains.buildServer.agent.BuildAgentConfiguration
+import jetbrains.buildServer.agent.BuildProgressLogger
 import jetbrains.buildServer.agent.ToolProvidersRegistry
 import jetbrains.buildServer.unity.DetectionMode
 import jetbrains.buildServer.unity.UnityBuildRunnerContext
@@ -33,6 +35,8 @@ class UnityToolProviderTest {
     private val toolsRegistry = mockk<ToolProvidersRegistry>()
     private val extensionHolder = mockk<ExtensionHolder>()
     private val eventDispatcher = mockk<EventDispatcher<AgentLifeCycleListener>>()
+    private val build = mockk<AgentRunningBuild>()
+    private val buildLogger = mockk<BuildProgressLogger>()
 
     @BeforeMethod
     fun setUp() {
@@ -51,6 +55,9 @@ class UnityToolProviderTest {
         every { runnerContext.workingDirectory } returns File("foo")
         every { runnerContext.runnerParameters } returns mapOf()
         every { runnerContext.unityProject } returns mockk(relaxed = true)
+        every { runnerContext.build } returns build
+        every { build.buildLogger } returns buildLogger
+        every { buildLogger.message(any()) } returns Unit
     }
 
     @Test

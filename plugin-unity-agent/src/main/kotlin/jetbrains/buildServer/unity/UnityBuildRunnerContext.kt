@@ -8,10 +8,15 @@ class UnityBuildRunnerContext(
     private val context: BuildRunnerContext,
 ) : BuildRunnerContext by context {
     val unityProjectPath: String by lazy {
-        runnerParameters[UnityConstants.PARAM_PROJECT_PATH].let {
-            val relativeProjectPath = if (!it.isNullOrBlank()) it.trim() else ""
-            File(workingDirectory.absolutePath, relativeProjectPath)
-        }.absolutePath
+        val configuredPath = runnerParameters[UnityConstants.PARAM_PROJECT_PATH]?.trim().orEmpty()
+        val projectFile = if (configuredPath.isBlank()) {
+            workingDirectory
+        } else {
+            val configuredFile = File(configuredPath)
+            if (configuredFile.isAbsolute) configuredFile else File(workingDirectory, configuredPath)
+        }
+
+        projectFile.absolutePath
     }
 
     val unityProject: UnityProject by lazy {
