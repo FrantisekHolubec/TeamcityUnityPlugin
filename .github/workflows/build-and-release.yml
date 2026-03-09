@@ -1,0 +1,83 @@
+name: Build And Release
+
+on:
+  push:
+    branches:
+      - "master"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - "master"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build plugin distributions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build plugin distribution ZIPs
+        run: ./gradlew --no-daemon --build-cache --parallel :plugin-unity-agent:agentPlugin :plugin-unity-server:serverPlugin
+
+      - name: Upload plugin-unity-server.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-unity-server.zip
+          path: plugin-unity-server/build/distributions/plugin-unity-server.zip
+          if-no-files-found: error
+
+      - name: Upload teamcity-unity-agent.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamcity-unity-agent.zip
+          path: plugin-unity-agent/build/distributions/teamcity-unity-agent.zip
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download plugin-unity-server.zip
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-unity-server.zip
+          path: release-assets
+
+      - name: Download teamcity-unity-agent.zip
+        uses: actions/download-artifact@v4
+        with:
+          name: teamcity-unity-agent.zip
+          path: release-assets
+
+      - name: Create release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release-assets/plugin-unity-server.zip
+            release-assets/teamcity-unity-agent.zip
