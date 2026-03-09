@@ -228,7 +228,7 @@
 <tr class="advancedSetting">
     <th><label for="${params.logFilePath}">Custom log path:</label></th>
     <td>
-        <props:textProperty name="${params.logFilePath}" className="longField disableBuildTypeParams"/>
+        <props:textProperty name="${params.logFilePath}" className="longField"/>
         <span class="error" id="error_${params.logFilePath}"></span>
         <span class="smallNote">Path for Unity log file</span>
     </td>
