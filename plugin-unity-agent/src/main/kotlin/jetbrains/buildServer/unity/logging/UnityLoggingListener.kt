@@ -1,5 +1,3 @@
-
-
 package jetbrains.buildServer.unity.logging
 
 import jetbrains.buildServer.agent.BuildProgressLogger
@@ -13,7 +11,8 @@ import java.util.*
 
 class UnityLoggingListener(
     private val logger: BuildProgressLogger,
-    private val problemsProvider: LineStatusProvider
+    private val problemsProvider: LineStatusProvider,
+    private val suppressBuildProblems: Boolean = false,
 ) : ProcessListenerAdapter() {
 
     private var blocks = Stack<LogBlock>()
@@ -87,14 +86,18 @@ class UnityLoggingListener(
 
     private fun logMessage(text: String) {
         val message = currentBlock.getText(text)
-        val status = problemsProvider.getLineStatus(message)
-        val serviceMessage = when (status) {
-            LineStatus.Warning -> Message(message, Status.WARNING.text, null).asString()
-            LineStatus.Error -> BuildProblem(message).asString()
-            LineStatus.NonFatalFailure -> Message(message, Status.FAILURE.text, null).asString()
-            else -> message
+        when (problemsProvider.getLineStatus(message)) {
+            LineStatus.Warning -> logger.message(Message(message, Status.WARNING.text, null).asString())
+            LineStatus.Error -> {
+                if (suppressBuildProblems) {
+                    logger.message(Message(message, Status.WARNING.text, null).asString())
+                } else {
+                    logger.message(BuildProblem(message).asString())
+                }
+            }
+            LineStatus.NonFatalFailure -> logger.message(Message(message, Status.FAILURE.text, null).asString()) 
+            else -> logger.message(message)
         }
-        logger.message(serviceMessage)
     }
 
     private fun logBlockOpened(name: String) {
